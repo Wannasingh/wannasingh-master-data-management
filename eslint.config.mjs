@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "jest.config.js",
     "postcss.config.mjs",
+    "coverage/**",
   ]),
 ]);
 
