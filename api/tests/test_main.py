@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
-from httpx import AsyncClient
-from api.index import app, clean_data
+from httpx import AsyncClient, ASGITransport
+from api.index import app, clean_data, supabase
 
 # Test Pandas ETL logic
 def test_clean_data():
@@ -33,9 +33,15 @@ async def test_get_master_data(mocker):
     mock_response.data = [
         {"id": 1, "name": "Test Product", "category": "Cat 1", "value": 100.0}
     ]
-    mocker.patch('api.index.supabase.table().select().execute', return_value=mock_response)
     
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    mock_table = mocker.MagicMock()
+    mock_select = mocker.MagicMock()
+    mock_table.select.return_value = mock_select
+    mock_select.execute.return_value = mock_response
+    
+    mocker.patch.object(supabase, 'table', return_value=mock_table)
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/master-data")
         
     assert response.status_code == 200
@@ -43,7 +49,7 @@ async def test_get_master_data(mocker):
 
 @pytest.mark.asyncio
 async def test_upload_invalid_file_format():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/api/upload-etl", files={"file": ("test.txt", b"dummy content", "text/plain")})
         
     assert response.status_code == 400
