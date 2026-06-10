@@ -2,11 +2,18 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 
+interface MasterDataRecord {
+  id?: string | number;
+  name: string;
+  category: string;
+  value: number;
+}
+
 export default function Dashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<MasterDataRecord[]>([]);
   const [dashOffset, setDashOffset] = useState(251.2);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,6 +75,7 @@ export default function Dashboard() {
         setMessage(result.detail || 'Upload failed');
       }
     } catch (error) {
+      console.error(error);
       setMessage('An error occurred during upload.');
     } finally {
       setIsLoading(false);
@@ -405,7 +413,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <p className="font-body-md text-body-md text-on-surface"><span className="font-bold">Data Conflict Detected</span></p>
-                    <p className="text-label-md text-on-surface-variant">Duplicate entry for patient "Anderson, Mark" in Lab-7.</p>
+                    <p className="text-label-md text-on-surface-variant">Duplicate entry for patient &quot;Anderson, Mark&quot; in Lab-7.</p>
                     <p className="text-[10px] text-outline font-bold mt-1 uppercase">45 MINS AGO</p>
                   </div>
                   <div className="absolute left-5 top-10 bottom-[-24px] w-[1px] bg-outline-variant"></div>
@@ -429,7 +437,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <p className="font-body-md text-body-md text-on-surface"><span className="font-bold">New Auditor Assigned</span></p>
-                    <p className="text-label-md text-on-surface-variant">Sarah Jenkins granted access to 'Pediatrics' metadata.</p>
+                    <p className="text-label-md text-on-surface-variant">Sarah Jenkins granted access to &apos;Pediatrics&apos; metadata.</p>
                     <p className="text-[10px] text-outline font-bold mt-1 uppercase">5 HOURS AGO</p>
                   </div>
                 </div>
