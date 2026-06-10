@@ -54,3 +54,65 @@ async def test_upload_invalid_file_format():
         
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid file format. Please upload a CSV."
+
+@pytest.mark.asyncio
+async def test_auth_signup(mocker):
+    mock_auth = mocker.MagicMock()
+    mock_res = mocker.MagicMock()
+    mock_res.user = {"id": "user123", "email": "test@example.com"}
+    mock_auth.sign_up.return_value = mock_res
+    
+    mocker.patch.object(supabase, 'auth', mock_auth)
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post("/api/auth/signup", json={
+            "email": "test@example.com",
+            "password": "password123",
+            "full_name": "Test User",
+            "role": "data_analyst"
+        })
+        
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_auth_login(mocker):
+    mock_auth = mocker.MagicMock()
+    mock_res = mocker.MagicMock()
+    mock_res.session = {"access_token": "token123", "refresh_token": "refresh123"}
+    mock_auth.sign_in_with_password.return_value = mock_res
+    
+    mocker.patch.object(supabase, 'auth', mock_auth)
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post("/api/auth/login", json={
+            "email": "test@example.com",
+            "password": "password123"
+        })
+        
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_auth_logout(mocker):
+    mock_auth = mocker.MagicMock()
+    mocker.patch.object(supabase, 'auth', mock_auth)
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post("/api/auth/logout")
+        
+    assert response.status_code == 200
+    assert response.json() == {"message": "Logged out successfully"}
+
+@pytest.mark.asyncio
+async def test_auth_me(mocker):
+    mock_auth = mocker.MagicMock()
+    mock_res = mocker.MagicMock()
+    mock_res.user = {"id": "user123", "email": "test@example.com"}
+    mock_auth.get_user.return_value = mock_res
+    
+    mocker.patch.object(supabase, 'auth', mock_auth)
+    
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/api/auth/me", headers={"Authorization": "Bearer token123"})
+        
+    assert response.status_code == 200
+

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface MasterDataRecord {
   id?: string | number;
@@ -11,12 +12,17 @@ interface MasterDataRecord {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<MasterDataRecord[]>([]);
   const [dashOffset, setDashOffset] = useState(251.2);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [userName, setUserName] = useState("Dr. Sarah Chen");
+  const [userRole, setUserRole] = useState("System Administrator");
+  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
 
   const fetchMasterData = async () => {
     try {
@@ -31,12 +37,72 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    fetchMasterData();
+    const checkSession = async () => {
+      const sessionStr = localStorage.getItem("sb-session");
+      if (!sessionStr) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        const session = JSON.parse(sessionStr);
+        const token = session.access_token;
+        if (!token) {
+          localStorage.removeItem("sb-session");
+          router.push("/login");
+          return;
+        }
+
+        const res = await fetch("/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const userData = await res.json();
+          const meta = userData.user?.user_metadata || {};
+          setUserName(meta.full_name || userData.user?.email || "User");
+
+          const rawRole = meta.role || "auditor";
+          const formattedRole = rawRole
+            .split("_")
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+          setUserRole(formattedRole);
+
+          setIsVerifyingSession(false);
+          fetchMasterData();
+        } else {
+          localStorage.removeItem("sb-session");
+          router.push("/login");
+        }
+      } catch {
+        localStorage.removeItem("sb-session");
+        router.push("/login");
+      }
+    };
+
+    checkSession();
+
     // Trigger gauge animation after mount
     setTimeout(() => {
       setDashOffset(251.2 - (251.2 * 89) / 100);
     }, 100);
-  }, []);
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Logout API call failed", err);
+    } finally {
+      localStorage.removeItem("sb-session");
+      router.push("/login");
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -83,6 +149,16 @@ export default function Dashboard() {
     }
   };
 
+  if (isVerifyingSession) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-primary">
+        <span className="material-symbols-outlined animate-spin text-[48px]">
+          progress_activity
+        </span>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Sidebar Navigation */}
@@ -92,7 +168,7 @@ export default function Dashboard() {
             className="text-headline-sm font-headline-sm text-primary"
             data-testid="page-title"
           >
-            MediData
+            Master Data Management
           </h1>
           <p className="text-label-md font-label-md text-on-surface-variant">
             Enterprise MDM
@@ -142,6 +218,15 @@ export default function Dashboard() {
             <span className="material-symbols-outlined">settings</span>
             <span className="font-body-md text-body-md">Settings</span>
           </a>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-error hover:bg-surface-container-high rounded-full transition-all duration-200 cursor-pointer text-left"
+          >
+            <span className="material-symbols-outlined text-error">logout</span>
+            <span className="font-body-md text-body-md text-error font-semibold">
+              Logout
+            </span>
+          </button>
         </nav>
         <div className="mt-auto px-4">
           <div className="bg-primary-container p-4 rounded-xl text-on-primary-container relative overflow-hidden group cursor-pointer">
@@ -195,10 +280,10 @@ export default function Dashboard() {
             <div className="flex items-center gap-3 pl-4 border-l border-outline-variant">
               <div className="text-right">
                 <p className="font-label-md text-label-md text-on-surface font-semibold">
-                  Dr. Sarah Chen
+                  {userName}
                 </p>
                 <p className="font-label-md text-[10px] text-on-surface-variant">
-                  System Administrator
+                  {userRole}
                 </p>
               </div>
               <Image

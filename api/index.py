@@ -1,12 +1,22 @@
 import os
 import io
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List, Optional
+
+class SignUpRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    role: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 load_dotenv()
 
@@ -88,3 +98,55 @@ async def upload_and_process_file(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/signup")
+async def auth_signup(req: SignUpRequest):
+    """Sign up a new user in Supabase Auth with metadata"""
+    try:
+        response = supabase.auth.sign_up({
+            "email": req.email,
+            "password": req.password,
+            "options": {
+                "data": {
+                    "full_name": req.full_name,
+                    "role": req.role
+                }
+            }
+        })
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/auth/login")
+async def auth_login(req: LoginRequest):
+    """Authenticate user with email and password in Supabase Auth"""
+    try:
+        response = supabase.auth.sign_in_with_password({
+            "email": req.email,
+            "password": req.password
+        })
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/auth/logout")
+async def auth_logout():
+    """Sign out user from current session in Supabase"""
+    try:
+        supabase.auth.sign_out()
+        return {"message": "Logged out successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/auth/me")
+async def auth_me(authorization: Optional[str] = Header(None)):
+    """Retrieve logged-in user profile using JWT token"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    
+    token = authorization.split(" ")[1]
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
