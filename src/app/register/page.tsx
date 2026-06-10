@@ -56,11 +56,11 @@ export default function Register() {
     <div className="bg-background font-body-md text-on-surface overflow-x-hidden min-h-screen w-full flex items-center justify-center py-12 px-4 md:px-gutter precision-bg">
       <main className="w-full max-w-[1200px] grid grid-cols-1 lg:grid-cols-12 gap-card-gap items-center z-10">
         {/* Left Column: Branding & Value Prop */}
-        <section className="lg:col-span-5 flex flex-col justify-center space-y-6 text-center lg:text-left">
+        <section className="lg:col-span-6 flex flex-col justify-center space-y-6 text-center lg:text-left lg:pr-8">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
             <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
               <span className="material-symbols-outlined text-white text-3xl">
-                clinical_notes
+                database
               </span>
             </div>
             <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
@@ -72,8 +72,8 @@ export default function Register() {
             Master Data Ingestion.
           </h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto lg:mx-0">
-            Join the enterprise master data ecosystem designed for hospital
-            administrators and clinical data analysts. Centralize patient
+            Join the enterprise master data ecosystem designed for data
+            administrators and enterprise data analysts. Centralize master
             registries and ensure total data governance.
           </p>
 
@@ -88,14 +88,14 @@ export default function Register() {
             <article className="p-4 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm">
               <div className="text-primary font-bold text-lg">500+</div>
               <div className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">
-                Institutions
+                Enterprises
               </div>
             </article>
           </div>
         </section>
 
         {/* Right Column: Registration Card */}
-        <section className="lg:col-span-7 flex justify-center lg:justify-end">
+        <section className="lg:col-span-6 flex justify-center">
           <div className="glass-card w-full max-w-[520px] rounded-[24px] p-8 md:p-10 relative overflow-hidden">
             {/* Atmospheric background glow */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -107,7 +107,7 @@ export default function Register() {
                   Create Account
                 </h3>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Access the enterprise data governance suite.
+                  Sign up to access your enterprise dashboard.
                 </p>
               </header>
 
@@ -127,7 +127,7 @@ export default function Register() {
                     <input
                       className="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline text-body-md"
                       id="fullName"
-                      placeholder="Dr. Sarah Johnson"
+                      placeholder="Sarah Johnson"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
@@ -136,13 +136,13 @@ export default function Register() {
                   </div>
                 </fieldset>
 
-                {/* Org Email */}
+                {/* Email Address */}
                 <fieldset className="space-y-2 border-none p-0 m-0 group transition-transform duration-200 focus-within:scale-[1.01]">
                   <label
                     className="block font-label-md text-label-md text-on-surface-variant ml-1"
                     htmlFor="email"
                   >
-                    Organization Email
+                    Email Address
                   </label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
@@ -151,7 +151,7 @@ export default function Register() {
                     <input
                       className="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline text-body-md"
                       id="email"
-                      placeholder="s.johnson@healthcare.org"
+                      placeholder="sarah.johnson@example.com"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -183,15 +183,15 @@ export default function Register() {
                         Select your role
                       </option>
                       <option value="administrator">
-                        Hospital Administrator
+                        Enterprise Administrator
                       </option>
                       <option value="data_analyst">Data Quality Analyst</option>
                       <option value="clinical_director">
-                        Clinical Director
+                        Data Governance Director
                       </option>
                       <option value="it_manager">IT Systems Manager</option>
                       <option value="registry_manager">
-                        Patient Registry Manager
+                        Master Registry Manager
                       </option>
                     </select>
                     <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">
@@ -231,7 +231,7 @@ export default function Register() {
                       </span>
                     </button>
                   </div>
-                  <p className="text-[11px] text-on-surface-variant mt-1 px-1">
+                  <p className="font-label-md text-label-md text-outline mt-1 px-1">
                     Must be at least 12 characters with one special symbol.
                   </p>
                 </fieldset>
@@ -306,7 +306,7 @@ export default function Register() {
 
               <footer className="mt-8 pt-6 border-t border-outline-variant/30 text-center">
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Already have a Master Data Management account?{" "}
+                  Already have an account?{" "}
                   <Link
                     className="text-primary font-semibold hover:underline"
                     href="/login"

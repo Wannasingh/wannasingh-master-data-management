@@ -67,7 +67,7 @@ export default function Login() {
                   className="material-symbols-outlined text-primary"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
-                  health_and_safety
+                  database
                 </span>
               </div>
               <h1 className="font-headline-lg text-headline-lg text-on-primary-container tracking-tight">
@@ -77,12 +77,12 @@ export default function Login() {
 
             <div className="max-w-md">
               <h2 className="font-display-lg text-display-lg text-on-primary-container mb-6 leading-tight">
-                Precision in every patient record.
+                Precision in every master record.
               </h2>
               <p className="font-body-lg text-body-lg text-primary-fixed/90 mb-8">
-                The ultimate Master Data Management suite for modern healthcare
+                The ultimate Master Data Management suite for modern enterprise
                 systems. Orchestrate identity, quality, and governance with
-                enterprise-grade clinical intelligence.
+                enterprise-grade data intelligence.
               </p>
 
               <div className="space-y-4">
@@ -108,7 +108,7 @@ export default function Login() {
               <div className="flex -space-x-3">
                 <Image
                   className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                  alt="Professional Doctor avatar"
+                  alt="Data Architect avatar"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5fhUfMHBWWTIoaKU2LfAFo6l7TmOY5fSL84pyeBqKl0VaYagXOtp5MWR8HRvQzDD3RMWsD9U7CbpwtaKsVGJF4w5fn9SvXiyNCSMLXOcp9nz8Pi9k1VfB4igCW9RSn5ITGFyy2_mQBXbyS7wQxIheT_YFj1cOSoGERKSvuR1TKyv0QKqLYujeFuCaWZN4qafu2wSf6JiNO_sZthy2dOlmQTGg-aFFR3-vrSuxtCspXEUYow_whC9rmCZw0ZdQD3Q9kEChjT46OfY"
                   width={40}
                   height={40}
@@ -116,7 +116,7 @@ export default function Login() {
                 />
                 <Image
                   className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                  alt="Medical analyst avatar"
+                  alt="System Administrator avatar"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkKT7p4ZPtcLDARkYRzFLg-iWOFielSYhK_i1FHQbDINOl-cet_3THAn0pu3SMRPAuM1LFu1Wg4wFkeaYX8ZsZBLrA5JeORol2UTTZgW_YFSgKbweoIStjOvH0Lfp09vEroGemxoojIL-FlSbPTCBWLoGt58BuHTGHBntZErXxheo-MvzxUc_1hbE4VOxcvQYWy6BDUgaw_noqOjMuCqoMERy9NDmDNXhbG85taQyWlzrkdjNj1bUMpJ8X_r8sPUvK5CJKAR8Dax4"
                   width={40}
                   height={40}
@@ -124,7 +124,7 @@ export default function Login() {
                 />
                 <Image
                   className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                  alt="Healthcare meeting avatar"
+                  alt="Data Steward avatar"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEiIKYrLAG6dKGT2vrx6ZZThcbdqUzcnaGDwe3ZibFONLiwEQkLnUb7j0qjOnpxSOcSjCws1FNe7dDxmzP-V9R5NnZbvucpd15qjj16ip8DFczF9SSQPp_ph1DyAduE9kaLkNcE9vdZimB78Pet9uw2DZrmDAa8lLeo_pDqI2xAbVuA0wP9854dnZNBJkrFeUgMWRx_L7HwZmEN0v-ze7bej9NuSQwdgQgFsqbizJEcKNlI36u7h7I9Vz-IZuyZf8TCGni6Qc9YaQ"
                   width={40}
                   height={40}
@@ -132,7 +132,7 @@ export default function Login() {
                 />
               </div>
               <p className="font-label-md text-label-md text-primary-fixed/80 max-w-[200px]">
-                Trusted by 2,400+ leading hospital networks worldwide.
+                Trusted by 2,400+ leading enterprise networks worldwide.
               </p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function Login() {
                   className="material-symbols-outlined text-white"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
-                  health_and_safety
+                  database
                 </span>
               </div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">
@@ -321,7 +321,7 @@ export default function Login() {
                 </button>
                 <button className="flex items-center justify-center gap-2 p-3 border border-outline-variant rounded-xl hover:bg-surface-container transition-colors cursor-pointer">
                   <span className="material-symbols-outlined text-outline text-[20px]">
-                    smart_alarm
+                    badge
                   </span>
                   <span className="font-label-md text-label-md text-on-surface-variant">
                     ID Card

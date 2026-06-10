@@ -87,7 +87,7 @@ export default function NotFound() {
                     className="material-symbols-outlined text-primary text-[72px] sm:text-[96px]"
                     style={{ fontVariationSettings: "'wght' 200" }}
                   >
-                    clinical_notes
+                    database
                   </span>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export default function NotFound() {
               Data Point <span className="gradient-text">Not Found</span>
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant">
-              The record or diagnostic page you are looking for seems to have
+              The record or directory page you are looking for seems to have
               been moved or archived. Our Master Data Management system could
               not locate this specific endpoint.
             </p>
@@ -181,7 +181,7 @@ export default function NotFound() {
             </h3>
             <p className="font-body-md text-body-md text-on-surface-variant">
               Help us improve the precision of our enterprise platform by
-              reporting broken diagnostic links.
+              reporting broken data links.
             </p>
           </div>
         </section>
@@ -190,7 +190,7 @@ export default function NotFound() {
         <footer className="mt-20 mb-6 opacity-40">
           <div className="flex items-center gap-2 justify-center">
             <span className="material-symbols-outlined text-primary">
-              health_and_safety
+              database
             </span>
             <span className="font-headline-sm text-headline-sm font-bold tracking-tight">
               Master Data Management
@@ -221,7 +221,7 @@ export default function NotFound() {
             <input
               ref={searchInputRef}
               className="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 text-body-lg outline-none"
-              placeholder="Search for patient data, analytics, or records..."
+              placeholder="Search for master data, analytics, or records..."
               type="text"
             />
           </div>

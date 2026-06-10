@@ -38,7 +38,7 @@ describe("Register Page", () => {
     expect(screen.getAllByText(/Create Account/i).length).toBeGreaterThan(0);
     // Field assertions
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Organization Email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Job Role/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/I agree to the/i)).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("Register Page", () => {
   it("triggers mock validation and sends request on form submission", async () => {
     render(<Register />);
     const nameInput = screen.getByLabelText(/Full Name/i);
-    const emailInput = screen.getByLabelText(/Organization Email/i);
+    const emailInput = screen.getByLabelText(/Email Address/i);
     const roleSelect = screen.getByLabelText(/Job Role/i);
     const passwordInput = screen.getByLabelText(/Password/i);
     const termsCheckbox = screen.getByLabelText(/I agree to the/i);
