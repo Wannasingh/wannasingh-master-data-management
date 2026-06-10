@@ -1,0 +1,12 @@
+# Ignore directories for Prettier formatting
+node_modules/
+.next/
+out/
+build/
+coverage/
+venv/
+.pytest_cache/
+__pycache__/
+.sonar/
+reports/
+package-lock.json

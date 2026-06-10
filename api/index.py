@@ -46,7 +46,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df.dropna(how='all', inplace=True)
     
     # Trim whitespace for string columns
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    map_fn = getattr(df, 'map', getattr(df, 'applymap', None))
+    df = map_fn(lambda x: x.strip() if isinstance(x, str) else x)
     
     # Drop duplicates
     df.drop_duplicates(inplace=True)

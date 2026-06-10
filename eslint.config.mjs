@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
     "jest.config.js",
     "postcss.config.mjs",
     "coverage/**",
+    "venv/**",
+    ".pytest_cache/**",
   ]),
 ]);
 
