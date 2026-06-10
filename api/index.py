@@ -3,9 +3,12 @@ import io
 import pandas as pd
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List, Optional
+
+load_dotenv()
 
 app = FastAPI(title="MDM API", version="1.0.0")
 
@@ -21,8 +24,10 @@ app.add_middleware(
 # These env vars should be set in Vercel or locally via .env
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mock-url.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "mock-key")
+SUPABASE_SCHEMA = os.getenv("SUPABASE_SCHEMA", "public")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+opts = ClientOptions(schema=SUPABASE_SCHEMA)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=opts)
 
 class MasterDataResponse(BaseModel):
     id: Optional[int]
