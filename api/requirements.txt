@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+supabase
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+pydantic
