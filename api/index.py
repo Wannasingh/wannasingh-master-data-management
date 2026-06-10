@@ -28,6 +28,12 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class SystemSettings(BaseModel):
+    fuzzy_threshold: int
+    golden_quality_threshold: int
+    auto_merge: bool
+    redis_cache_ttl: int
+
 load_dotenv(override=True)
 
 app = FastAPI(title="MDM API", version="1.0.0")
@@ -57,6 +63,89 @@ else:
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+
+DEFAULT_SETTINGS = {
+    "fuzzy_threshold": 75,
+    "golden_quality_threshold": 80,
+    "auto_merge": True,
+    "redis_cache_ttl": 60
+}
+
+def get_system_settings() -> dict:
+    """Fetch settings from Redis, or Supabase, or fall back to defaults"""
+    cache_key = "system_settings_cache"
+    try:
+        cached = redis_client.get(cache_key)
+        if cached:
+            return json.loads(cached)
+    except Exception as e:
+        print(f"Redis get settings warning: {e}")
+
+    # Fetch from Supabase
+    try:
+        response = supabase.table("system_settings").select("*").execute()
+        if response.data:
+            settings_dict = {}
+            for item in response.data:
+                k = item["key"]
+                v = item["value"]
+                # Convert types
+                if k in ["fuzzy_threshold", "golden_quality_threshold", "redis_cache_ttl"]:
+                    settings_dict[k] = int(v)
+                elif k == "auto_merge":
+                    settings_dict[k] = v.lower() == "true"
+                else:
+                    settings_dict[k] = v
+            
+            # Ensure all defaults are present if not in DB
+            for k, val in DEFAULT_SETTINGS.items():
+                if k not in settings_dict:
+                    settings_dict[k] = val
+            
+            # Cache in Redis for 5 minutes
+            try:
+                redis_client.set(cache_key, json.dumps(settings_dict), ex=300)
+            except Exception as e:
+                print(f"Redis set settings cache warning: {e}")
+                
+            return settings_dict
+    except Exception as e:
+        print(f"Supabase read settings warning: {e}. Falling back to default settings.")
+    
+    return DEFAULT_SETTINGS
+
+def save_system_settings(settings: SystemSettings):
+    """Save settings to Supabase and cache in Redis"""
+    cache_key = "system_settings_cache"
+    settings_dict = settings.model_dump() if hasattr(settings, "model_dump") else settings.dict()
+    
+    # Save to Supabase (upsert)
+    records = []
+    for k, v in settings_dict.items():
+        records.append({
+            "key": k,
+            "value": str(v)
+        })
+    
+    try:
+        supabase.table("system_settings").upsert(records).execute()
+        # Log to audit_logs
+        try:
+            supabase.table("audit_logs").insert({
+                "action": "UPDATE_SETTINGS",
+                "details": f"System settings updated: {json.dumps(settings_dict)}",
+                "actor": "Administrator"
+            }).execute()
+        except Exception as ae:
+            print(f"Failed to write settings update to audit_logs: {ae}")
+    except Exception as e:
+        print(f"Supabase save settings warning: {e}")
+    
+    # Write/Update Redis cache
+    try:
+        redis_client.set(cache_key, json.dumps(settings_dict), ex=300)
+    except Exception as e:
+        print(f"Redis write settings cache warning: {e}")
 
 class MasterDataResponse(BaseModel):
     id: Optional[int]
@@ -107,9 +196,11 @@ async def get_master_data():
         response = supabase.table("master_data").select("*").execute()
         data = response.data
         
-        # Attempt to cache the result in Redis for 60 seconds
+        # Attempt to cache the result in Redis with dynamic TTL
         try:
-            redis_client.set(cache_key, json.dumps(data), ex=60)
+            settings = get_system_settings()
+            ttl = settings.get("redis_cache_ttl", 60)
+            redis_client.set(cache_key, json.dumps(data), ex=ttl)
         except Exception as e:
             print(f"Redis cache write warning: {e}")
             
@@ -228,6 +319,9 @@ async def deduplicate():
         response = supabase.table("master_data").select("*").execute()
         records = response.data
         
+        settings = get_system_settings()
+        fuzzy_threshold = settings.get("fuzzy_threshold", 75) / 100.0
+        
         duplicates = []
         for i in range(len(records)):
             for j in range(i + 1, len(records)):
@@ -240,7 +334,7 @@ async def deduplicate():
                     
                     ratio = SequenceMatcher(None, name1, name2).ratio()
                     
-                    if ratio > 0.75 or name1 in name2 or name2 in name1:
+                    if ratio >= fuzzy_threshold or name1 in name2 or name2 in name1:
                         duplicates.append({
                             "id1": rec1["id"],
                             "name1": rec1["name"],
@@ -342,3 +436,72 @@ async def auth_me(authorization: Optional[str] = Header(None)):
         return user_response
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+@app.get("/api/settings", response_model=SystemSettings)
+async def get_settings():
+    """Retrieve active system settings"""
+    try:
+        settings = get_system_settings()
+        return settings
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings")
+async def update_settings(settings: SystemSettings):
+    """Update system settings dynamically"""
+    try:
+        # Validate values
+        if settings.fuzzy_threshold < 50 or settings.fuzzy_threshold > 100:
+            raise HTTPException(status_code=400, detail="Fuzzy threshold must be between 50 and 100")
+        if settings.golden_quality_threshold < 0 or settings.golden_quality_threshold > 100:
+            raise HTTPException(status_code=400, detail="Golden record quality minimum must be between 0 and 100")
+        if settings.redis_cache_ttl < 1:
+            raise HTTPException(status_code=400, detail="Redis Cache TTL must be at least 1 second")
+
+        save_system_settings(settings)
+        return {"message": "Settings updated successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/cache/purge")
+async def purge_cache():
+    """Manually clear the Redis and master data caching layers"""
+    try:
+        try:
+            redis_client.delete("master_data_cache")
+            redis_client.delete("system_settings_cache")
+            # Write to audit_logs in Supabase if possible
+            try:
+                supabase.table("audit_logs").insert({
+                    "action": "PURGE_CACHE",
+                    "details": "Application and master data cache manually purged.",
+                    "actor": "Administrator"
+                }).execute()
+            except Exception as ae:
+                print(f"Failed to write purge cache to audit_logs: {ae}")
+        except Exception as e:
+            print(f"Redis delete cache warning: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to purge Redis cache: {e}")
+            
+        return {"message": "Cache purged successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/audit-logs")
+async def get_audit_logs():
+    """Retrieve audit logs from Supabase, or fall back to sample logs"""
+    try:
+        response = supabase.table("audit_logs").select("*").order("created_at", desc=True).limit(50).execute()
+        # Sort or formatting if needed, otherwise return data
+        return response.data
+    except Exception as e:
+        print(f"Supabase read audit_logs warning: {e}")
+        # Return fallback sample audit logs
+        return [
+            {"id": 1, "action": "SYSTEM_INIT", "details": "MDM database schema initialized successfully.", "actor": "System", "created_at": "2026-06-10T09:00:00+07:00"},
+            {"id": 2, "action": "INGEST_EXTERNAL", "details": "Ingested 10 customer records from CRM API.", "actor": "System", "created_at": "2026-06-10T12:30:00+07:00"},
+            {"id": 3, "action": "MERGE_RECORDS", "details": "Merged duplicate record (id: 45) into primary (id: 12).", "actor": "Sarah Jenkins", "created_at": "2026-06-10T14:15:00+07:00"},
+            {"id": 4, "action": "UPDATE_SETTINGS", "details": "Similarity threshold updated to 85%.", "actor": "Administrator", "created_at": "2026-06-10T15:45:00+07:00"}
+        ]

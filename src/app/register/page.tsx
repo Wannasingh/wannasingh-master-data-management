@@ -186,7 +186,7 @@ export default function Register() {
                         Enterprise Administrator
                       </option>
                       <option value="data_analyst">Data Quality Analyst</option>
-                      <option value="clinical_director">
+                      <option value="data_governance_director">
                         Data Governance Director
                       </option>
                       <option value="it_manager">IT Systems Manager</option>
