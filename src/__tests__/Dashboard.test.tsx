@@ -16,7 +16,7 @@ describe('Master Data Dashboard (Stitch Redesign)', () => {
     // Assert page title
     const titleElement = screen.getByTestId('page-title');
     expect(titleElement).toBeInTheDocument();
-    expect(titleElement).toHaveTextContent('MasterData Pro');
+    expect(titleElement).toHaveTextContent('MediData');
   });
 
   it('renders the ETL Upload section and file input', () => {
