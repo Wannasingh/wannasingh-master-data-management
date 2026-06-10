@@ -59,11 +59,15 @@
 body {
   background-color: var(--color-background);
   color: var(--color-on-surface);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -101,32 +105,79 @@ body {
 }
 
 /* Custom text utility mappings to preserve Stitch styles */
-.text-headline-lg-mobile { font-size: 24px; line-height: 32px; }
-.font-headline-lg-mobile { font-weight: 600; }
+.text-headline-lg-mobile {
+  font-size: 24px;
+  line-height: 32px;
+}
+.font-headline-lg-mobile {
+  font-weight: 600;
+}
 
-.text-headline-md { font-size: 22px; line-height: 30px; }
-.font-headline-md { font-weight: 600; }
+.text-headline-md {
+  font-size: 22px;
+  line-height: 30px;
+}
+.font-headline-md {
+  font-weight: 600;
+}
 
-.text-body-md { font-size: 14px; line-height: 20px; }
-.font-body-md { font-weight: 400; }
+.text-body-md {
+  font-size: 14px;
+  line-height: 20px;
+}
+.font-body-md {
+  font-weight: 400;
+}
 
-.text-stat-value { font-size: 32px; line-height: 40px; }
-.font-stat-value { font-weight: 700; }
+.text-stat-value {
+  font-size: 32px;
+  line-height: 40px;
+}
+.font-stat-value {
+  font-weight: 700;
+}
 
-.text-body-lg { font-size: 16px; line-height: 24px; }
-.font-body-lg { font-weight: 400; }
+.text-body-lg {
+  font-size: 16px;
+  line-height: 24px;
+}
+.font-body-lg {
+  font-weight: 400;
+}
 
-.text-headline-lg { font-size: 28px; line-height: 36px; letter-spacing: -0.01em; }
-.font-headline-lg { font-weight: 600; }
+.text-headline-lg {
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: -0.01em;
+}
+.font-headline-lg {
+  font-weight: 600;
+}
 
-.text-headline-sm { font-size: 18px; line-height: 26px; }
-.font-headline-sm { font-weight: 600; }
+.text-headline-sm {
+  font-size: 18px;
+  line-height: 26px;
+}
+.font-headline-sm {
+  font-weight: 600;
+}
 
-.text-label-md { font-size: 12px; line-height: 16px; }
-.font-label-md { font-weight: 500; }
+.text-label-md {
+  font-size: 12px;
+  line-height: 16px;
+}
+.font-label-md {
+  font-weight: 500;
+}
 
-.text-display-lg { font-size: 36px; line-height: 44px; letter-spacing: -0.02em; }
-.font-display-lg { font-weight: 700; }
+.text-display-lg {
+  font-size: 36px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+}
+.font-display-lg {
+  font-weight: 700;
+}
 
 ::-webkit-scrollbar {
   width: 8px;

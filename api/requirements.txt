@@ -8,3 +8,5 @@ pytest-asyncio
 pytest-cov
 httpx
 pydantic
+python-multipart
+pytest-mock
