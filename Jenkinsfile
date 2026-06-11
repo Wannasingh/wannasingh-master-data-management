@@ -17,7 +17,8 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh 'npm ci'
-                sh 'python3 -m venv venv'
+                sh 'python3 -m venv --without-pip venv'
+                sh 'curl -sS https://bootstrap.pypa.io/get-pip.py | ./venv/bin/python'
                 sh '. venv/bin/activate && pip install -r api/requirements.txt'
             }
         }
@@ -25,6 +26,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh 'npm run test'
+                sh 'mkdir -p reports'
                 sh '. venv/bin/activate && pytest api/tests/test_main.py --junitxml=reports/backend-test.xml --cov=api --cov-report=xml'
             }
         }
