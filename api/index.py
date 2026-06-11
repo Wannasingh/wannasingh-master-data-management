@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List, Optional, Annotated
 import httpx
-import random
+import secrets
 
 class SignUpRequest(BaseModel):
     email: str
@@ -289,7 +289,7 @@ async def _fetch_external_users() -> list:
         records.append({
             "name": user["name"],
             "category": "Customers",
-            "value": float(random.randint(10, 100) * 1000),
+            "value": float(secrets.SystemRandom().randint(10, 100) * 1000),
             "source_system": "CRM API (JSONPlaceholder)",
             "status": "Golden",
             "data_quality_score": 95 if "@" in user["email"] else 70
