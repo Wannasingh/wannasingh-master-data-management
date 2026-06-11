@@ -14,13 +14,13 @@ export default function NotFound() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       // Divide by different speeds for subtle depth effect
-      const x = (window.innerWidth / 2 - e.clientX) / 30;
-      const y = (window.innerHeight / 2 - e.clientY) / 30;
+      const x = (globalThis.innerWidth / 2 - e.clientX) / 30;
+      const y = (globalThis.innerHeight / 2 - e.clientY) / 30;
       setMouseOffset({ x, y });
     };
-    window.addEventListener("mousemove", handleMouseMove);
+    globalThis.addEventListener("mousemove", handleMouseMove);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
+      globalThis.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
 
@@ -35,9 +35,9 @@ export default function NotFound() {
         setIsSearchOpen(false);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      globalThis.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -126,7 +126,7 @@ export default function NotFound() {
               className="group relative px-8 py-4 bg-primary text-on-primary font-headline-sm text-headline-sm rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-3"
               href="/"
             >
-              <span className="material-symbols-outlined">dashboard</span>
+              <span className="material-symbols-outlined">dashboard</span>{" "}
               Return to Dashboard
               <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
@@ -134,7 +134,7 @@ export default function NotFound() {
               className="px-8 py-4 bg-surface-container-high text-on-surface-variant font-headline-sm text-headline-sm rounded-full transition-all hover:bg-surface-container-highest active:scale-95 flex items-center gap-3 cursor-pointer"
               onClick={handleBack}
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="material-symbols-outlined">arrow_back</span>{" "}
               Go Back
             </button>
           </div>
@@ -201,18 +201,22 @@ export default function NotFound() {
 
       {/* Interactive Search Overlay */}
       <div
-        className={`fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
           isSearchOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
-        onClick={() => setIsSearchOpen(false)}
       >
+        <button
+          type="button"
+          className="absolute inset-0 w-full h-full bg-on-surface/40 backdrop-blur-sm border-0 p-0 outline-none cursor-default"
+          onClick={() => setIsSearchOpen(false)}
+          aria-label="Close search overlay"
+        />
         <div
-          className={`bg-surface p-4 w-full max-w-xl rounded-2xl shadow-xl transform transition-transform duration-300 mx-4 ${
+          className={`relative z-10 bg-surface p-4 w-full max-w-xl rounded-2xl shadow-xl transform transition-transform duration-300 mx-4 ${
             isSearchOpen ? "scale-100" : "scale-95"
           }`}
-          onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">

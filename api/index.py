@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Annotated
 import httpx
 import random
 
@@ -71,8 +71,7 @@ DEFAULT_SETTINGS = {
     "redis_cache_ttl": 60
 }
 
-def get_system_settings() -> dict:
-    """Fetch settings from Redis, or Supabase, or fall back to defaults"""
+def _get_settings_from_redis() -> Optional[dict]:
     cache_key = "system_settings_cache"
     try:
         cached = redis_client.get(cache_key)
@@ -80,39 +79,52 @@ def get_system_settings() -> dict:
             return json.loads(cached)
     except Exception as e:
         print(f"Redis get settings warning: {e}")
+    return None
+
+def _parse_supabase_settings(data: list) -> dict:
+    settings_dict = {}
+    for item in data:
+        k = item["key"]
+        v = item["value"]
+        if k in ["fuzzy_threshold", "golden_quality_threshold", "redis_cache_ttl"]:
+            settings_dict[k] = int(v)
+        elif k == "auto_merge":
+            settings_dict[k] = v.lower() == "true"
+        else:
+            settings_dict[k] = v
+    return settings_dict
+
+def _cache_settings_in_redis(settings_dict: dict) -> None:
+    cache_key = "system_settings_cache"
+    try:
+        redis_client.set(cache_key, json.dumps(settings_dict), ex=300)
+    except Exception as e:
+        print(f"Redis set settings cache warning: {e}")
+
+def get_system_settings() -> dict:
+    """Fetch settings from Redis, or Supabase, or fall back to defaults"""
+    cached = _get_settings_from_redis()
+    if cached:
+        return cached
 
     # Fetch from Supabase
     try:
         response = supabase.table("system_settings").select("*").execute()
         if response.data:
-            settings_dict = {}
-            for item in response.data:
-                k = item["key"]
-                v = item["value"]
-                # Convert types
-                if k in ["fuzzy_threshold", "golden_quality_threshold", "redis_cache_ttl"]:
-                    settings_dict[k] = int(v)
-                elif k == "auto_merge":
-                    settings_dict[k] = v.lower() == "true"
-                else:
-                    settings_dict[k] = v
+            settings_dict = _parse_supabase_settings(response.data)
             
             # Ensure all defaults are present if not in DB
             for k, val in DEFAULT_SETTINGS.items():
                 if k not in settings_dict:
                     settings_dict[k] = val
             
-            # Cache in Redis for 5 minutes
-            try:
-                redis_client.set(cache_key, json.dumps(settings_dict), ex=300)
-            except Exception as e:
-                print(f"Redis set settings cache warning: {e}")
-                
+            _cache_settings_in_redis(settings_dict)
             return settings_dict
     except Exception as e:
         print(f"Supabase read settings warning: {e}. Falling back to default settings.")
     
     return DEFAULT_SETTINGS
+
 
 def save_system_settings(settings: SystemSettings):
     """Save settings to Supabase and cache in Redis"""
@@ -148,7 +160,7 @@ def save_system_settings(settings: SystemSettings):
         print(f"Redis write settings cache warning: {e}")
 
 class MasterDataResponse(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     name: str
     category: str
     value: float
@@ -179,7 +191,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-@app.get("/api/master-data", response_model=List[MasterDataResponse])
+@app.get("/api/master-data", response_model=List[MasterDataResponse], responses={500: {"description": "Internal Server Error"}})
 async def get_master_data():
     """Retrieve master data from Supabase, caching in Redis"""
     cache_key = "master_data_cache"
@@ -208,8 +220,28 @@ async def get_master_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/upload-etl")
-async def upload_and_process_file(file: UploadFile = File(...)):
+def _score_single_record(rec: dict) -> None:
+    if 'source_system' not in rec or not rec['source_system']:
+        rec['source_system'] = 'CSV Ingestion'
+    if 'status' not in rec or not rec['status']:
+        rec['status'] = 'Golden'
+    if 'data_quality_score' not in rec or rec['data_quality_score'] is None:
+        score = 100
+        name_str = str(rec.get('name', ''))
+        val = rec.get('value')
+        if not name_str or len(name_str) < 3:
+            score -= 20
+        if val is not None and float(val) <= 0:
+            score -= 30
+        rec['data_quality_score'] = max(10, score)
+
+def _process_and_score_records(records: list) -> None:
+    # Add default values and data quality calculation
+    for rec in records:
+        _score_single_record(rec)
+
+@app.post("/api/upload-etl", responses={400: {"description": "Invalid File Format"}, 500: {"description": "Internal Server Error"}})
+async def upload_and_process_file(file: Annotated[UploadFile, File(...)]):
     """Upload CSV, clean using Pandas, and upsert to Supabase"""
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload a CSV.")
@@ -224,21 +256,8 @@ async def upload_and_process_file(file: UploadFile = File(...)):
         # Convert to list of dicts for Supabase insertion
         records = cleaned_df.to_dict(orient="records")
         
-        # Add default values and data quality calculation
-        for rec in records:
-            if 'source_system' not in rec or not rec['source_system']:
-                rec['source_system'] = 'CSV Ingestion'
-            if 'status' not in rec or not rec['status']:
-                rec['status'] = 'Golden'
-            if 'data_quality_score' not in rec or rec['data_quality_score'] is None:
-                score = 100
-                name_str = str(rec.get('name', ''))
-                val = rec.get('value')
-                if not name_str or len(name_str) < 3:
-                    score -= 20
-                if val is None or float(val) <= 0:
-                    score -= 30
-                rec['data_quality_score'] = max(10, score)
+        # Process and calculate quality scores
+        _process_and_score_records(records)
         
         # Upsert into Supabase (Requires a primary key, e.g., 'id')
         if records:
@@ -257,51 +276,59 @@ async def upload_and_process_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/ingest-external")
+async def _fetch_external_users() -> list:
+    url = "https://jsonplaceholder.typicode.com/users"
+    async with httpx.AsyncClient() as client:
+        res = await client.get(url)
+    if res.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch customer data from external API")
+    
+    users = res.json()
+    records = []
+    for user in users:
+        records.append({
+            "name": user["name"],
+            "category": "Customers",
+            "value": float(random.randint(10, 100) * 1000),
+            "source_system": "CRM API (JSONPlaceholder)",
+            "status": "Golden",
+            "data_quality_score": 95 if "@" in user["email"] else 70
+        })
+    return records
+
+async def _fetch_external_products() -> list:
+    url = "https://dummyjson.com/products?limit=10"
+    async with httpx.AsyncClient() as client:
+        res = await client.get(url)
+    if res.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch product data from external API")
+    
+    products_data = res.json().get("products", [])
+    records = []
+    for prod in products_data:
+        records.append({
+            "name": prod["title"],
+            "category": "Products",
+            "value": float(prod["price"]),
+            "source_system": "ERP API (DummyJSON)",
+            "status": "Golden",
+            "data_quality_score": 100
+        })
+    return records
+
+@app.post("/api/ingest-external", responses={400: {"description": "Invalid Domain"}, 500: {"description": "External API or Database Error"}})
 async def ingest_external(domain: str):
     """Fetch data from external APIs and upsert to master_data"""
     if domain == "customers":
-        url = "https://jsonplaceholder.typicode.com/users"
-        async with httpx.AsyncClient() as client:
-            res = await client.get(url)
-        if res.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to fetch customer data from external API")
-        
-        users = res.json()
-        records = []
-        for user in users:
-            records.append({
-                "name": user["name"],
-                "category": "Customers",
-                "value": float(random.randint(10, 100) * 1000),
-                "source_system": "CRM API (JSONPlaceholder)",
-                "status": "Golden",
-                "data_quality_score": 95 if "@" in user["email"] else 70
-            })
+        records = await _fetch_external_users()
     elif domain == "products":
-        url = "https://dummyjson.com/products?limit=10"
-        async with httpx.AsyncClient() as client:
-            res = await client.get(url)
-        if res.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to fetch product data from external API")
-        
-        products_data = res.json().get("products", [])
-        records = []
-        for prod in products_data:
-            records.append({
-                "name": prod["title"],
-                "category": "Products",
-                "value": float(prod["price"]),
-                "source_system": "ERP API (DummyJSON)",
-                "status": "Golden",
-                "data_quality_score": 100
-            })
+        records = await _fetch_external_products()
     else:
         raise HTTPException(status_code=400, detail="Unsupported domain. Use 'customers' or 'products'.")
 
     if records:
         try:
-            response = supabase.table("master_data").upsert(records).execute()
+            supabase.table("master_data").upsert(records).execute()
             try:
                 redis_client.delete("master_data_cache")
             except Exception as e:
@@ -311,7 +338,8 @@ async def ingest_external(domain: str):
             raise HTTPException(status_code=500, detail=str(e))
     return {"message": "No records fetched."}
 
-@app.get("/api/deduplicate")
+
+@app.get("/api/deduplicate", responses={500: {"description": "Internal Server Error"}})
 async def deduplicate():
     """Scan master_data for potential duplicate records across domains"""
     from difflib import SequenceMatcher
@@ -336,24 +364,24 @@ async def deduplicate():
                     
                     if ratio >= fuzzy_threshold or name1 in name2 or name2 in name1:
                         duplicates.append({
-                            "id1": rec1["id"],
-                            "name1": rec1["name"],
-                            "source1": rec1.get("source_system", "Unknown"),
-                            "quality1": rec1.get("data_quality_score", 100),
-                            "status1": rec1.get("status", "Golden"),
-                            "id2": rec2["id"],
-                            "name2": rec2["name"],
-                            "source2": rec2.get("source_system", "Unknown"),
-                            "quality2": rec2.get("data_quality_score", 100),
-                            "status2": rec2.get("status", "Golden"),
-                            "category": rec1["category"],
-                            "similarity": round(ratio * 100, 1)
+                             "id1": rec1["id"],
+                             "name1": rec1["name"],
+                             "source1": rec1.get("source_system", "Unknown"),
+                             "quality1": rec1.get("data_quality_score", 100),
+                             "status1": rec1.get("status", "Golden"),
+                             "id2": rec2["id"],
+                             "name2": rec2["name"],
+                             "source2": rec2.get("source_system", "Unknown"),
+                             "quality2": rec2.get("data_quality_score", 100),
+                             "status2": rec2.get("status", "Golden"),
+                             "category": rec1["category"],
+                             "similarity": round(ratio * 100, 1)
                         })
         return duplicates
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/merge")
+@app.post("/api/merge", responses={404: {"description": "Record Not Found"}, 500: {"description": "Internal Server Error"}})
 async def merge_records(req: MergeRequest):
     """Merge duplicate record into the primary record, removing duplicate and marking primary as Golden"""
     try:
@@ -385,7 +413,7 @@ async def merge_records(req: MergeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/auth/signup")
+@app.post("/api/auth/signup", responses={400: {"description": "Signup Failed"}})
 async def auth_signup(req: SignUpRequest):
     """Sign up a new user in Supabase Auth with metadata"""
     try:
@@ -403,7 +431,7 @@ async def auth_signup(req: SignUpRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/api/auth/login")
+@app.post("/api/auth/login", responses={400: {"description": "Authentication Failed"}})
 async def auth_login(req: LoginRequest):
     """Authenticate user with email and password in Supabase Auth"""
     try:
@@ -415,7 +443,7 @@ async def auth_login(req: LoginRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/api/auth/logout")
+@app.post("/api/auth/logout", responses={400: {"description": "Logout Failed"}})
 async def auth_logout():
     """Sign out user from current session in Supabase"""
     try:
@@ -424,8 +452,8 @@ async def auth_logout():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/api/auth/me")
-async def auth_me(authorization: Optional[str] = Header(None)):
+@app.get("/api/auth/me", responses={401: {"description": "Unauthorized"}})
+async def auth_me(authorization: Annotated[Optional[str], Header()] = None):
     """Retrieve logged-in user profile using JWT token"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
@@ -437,7 +465,7 @@ async def auth_me(authorization: Optional[str] = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-@app.get("/api/settings", response_model=SystemSettings)
+@app.get("/api/settings", response_model=SystemSettings, responses={500: {"description": "Internal Server Error"}})
 async def get_settings():
     """Retrieve active system settings"""
     try:
@@ -446,7 +474,7 @@ async def get_settings():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/settings")
+@app.post("/api/settings", responses={400: {"description": "Validation Error"}, 500: {"description": "Internal Server Error"}})
 async def update_settings(settings: SystemSettings):
     """Update system settings dynamically"""
     try:
@@ -465,7 +493,7 @@ async def update_settings(settings: SystemSettings):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/cache/purge")
+@app.post("/api/cache/purge", responses={500: {"description": "Internal Server Error"}})
 async def purge_cache():
     """Manually clear the Redis and master data caching layers"""
     try:

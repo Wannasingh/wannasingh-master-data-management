@@ -17,7 +17,7 @@ export default function Register() {
   );
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!fullName || !email || !role || !password || !terms) return;
 
@@ -251,14 +251,13 @@ export default function Register() {
                     htmlFor="terms"
                   >
                     I agree to the{" "}
-                    <a className="text-primary hover:underline" href="#">
+                    <a className="text-primary hover:underline" href="/register#terms">
                       Enterprise Terms of Service
                     </a>{" "}
                     and{" "}
-                    <a className="text-primary hover:underline" href="#">
+                    <a className="text-primary hover:underline" href="/register#privacy">
                       Privacy Policy
-                    </a>
-                    .
+                    </a>.
                   </label>
                 </div>
                 {errorMsg && (
@@ -279,7 +278,7 @@ export default function Register() {
                 >
                   {regStatus === "idle" && (
                     <>
-                      Create Account
+                      Create Account{" "}
                       <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                         arrow_forward
                       </span>
@@ -289,7 +288,7 @@ export default function Register() {
                     <>
                       <span className="material-symbols-outlined animate-spin">
                         progress_activity
-                      </span>
+                      </span>{" "}
                       Validating...
                     </>
                   )}
@@ -297,7 +296,7 @@ export default function Register() {
                     <>
                       <span className="material-symbols-outlined">
                         check_circle
-                      </span>
+                      </span>{" "}
                       Request Sent
                     </>
                   )}

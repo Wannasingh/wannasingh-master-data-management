@@ -4,6 +4,7 @@ pipeline {
     environment {
         NODE_ENV = 'development'
         PYTHONUNBUFFERED = '1'
+        PYTHONPATH = '.'
     }
 
     stages {
@@ -37,6 +38,11 @@ pipeline {
                 // SonarQube Scanner
                 withSonarQubeEnv('SonarQube') {
                     sh 'sonar-scanner'
+                }
+
+                // Wait for Quality Gate to succeed
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }

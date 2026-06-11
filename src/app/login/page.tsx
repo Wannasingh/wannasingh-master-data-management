@@ -16,7 +16,7 @@ export default function Login() {
   );
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email || !password) return;
 
@@ -203,12 +203,13 @@ export default function Login() {
                     >
                       Password
                     </label>
-                    <a
-                      className="font-label-md text-label-md text-primary hover:underline transition-all"
-                      href="#"
+                    <button
+                      type="button"
+                      className="font-label-md text-label-md text-primary hover:underline transition-all bg-transparent border-0 cursor-pointer p-0"
+                      onClick={() => alert("Password recovery service is coming soon. Please contact system admin.")}
                     >
                       Forgot password?
-                    </a>
+                    </button>
                   </div>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">
@@ -270,7 +271,7 @@ export default function Login() {
               >
                 {authStatus === "idle" && (
                   <>
-                    Sign In
+                    Sign In{" "}
                     <span className="material-symbols-outlined">
                       arrow_forward
                     </span>
@@ -280,7 +281,7 @@ export default function Login() {
                   <>
                     <span className="material-symbols-outlined animate-spin">
                       progress_activity
-                    </span>
+                    </span>{" "}
                     Authenticating...
                   </>
                 )}
@@ -288,7 +289,7 @@ export default function Login() {
                   <>
                     <span className="material-symbols-outlined">
                       check_circle
-                    </span>
+                    </span>{" "}
                     Success!
                   </>
                 )}

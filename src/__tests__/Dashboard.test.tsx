@@ -1,14 +1,21 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import Dashboard from "../app/page";
+import { render, screen } from "@testing-library/react";
+import DashboardLayout from "../app/(dashboard)/layout";
+import DashboardOverviewPage from "../app/(dashboard)/page";
+import RegistryPage from "../app/(dashboard)/registry/page";
+import ValidationPage from "../app/(dashboard)/validation/page";
 
-// Mock next/navigation useRouter
+// Mock next/navigation
 const mockPush = jest.fn();
+let mockPathname = "/";
 jest.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: mockPush,
       back: jest.fn(),
     };
+  },
+  usePathname() {
+    return mockPathname;
   },
 }));
 
@@ -36,6 +43,8 @@ global.fetch = jest.fn((url) => {
 }) as jest.Mock;
 
 beforeEach(() => {
+  mockPathname = "/";
+  mockPush.mockClear();
   // Mock localStorage for auth session
   Storage.prototype.getItem = jest.fn(() =>
     JSON.stringify({ access_token: "token123" }),
@@ -45,7 +54,12 @@ beforeEach(() => {
 
 describe("Master Data Dashboard (Suite Reorganization)", () => {
   it("renders the page title correctly", async () => {
-    render(<Dashboard />);
+    mockPathname = "/";
+    render(
+      <DashboardLayout>
+        <DashboardOverviewPage />
+      </DashboardLayout>
+    );
 
     // Wait for session check to complete and dashboard to load
     expect(await screen.findByText("Enterprise Connectivity Hub")).toBeInTheDocument();
@@ -57,17 +71,15 @@ describe("Master Data Dashboard (Suite Reorganization)", () => {
   });
 
   it("renders the ETL Upload section and file input under Master Data Registry", async () => {
-    render(<Dashboard />);
+    mockPathname = "/registry";
+    render(
+      <DashboardLayout>
+        <RegistryPage />
+      </DashboardLayout>
+    );
 
     // Wait for session check to complete and dashboard to load
-    expect(await screen.findByText("Enterprise Connectivity Hub")).toBeInTheDocument();
-
-    // Switch to Master Data Registry tab
-    const registryLink = screen.getAllByText("Master Data Registry")[0];
-    fireEvent.click(registryLink);
-
-    // Assert section heading
-    expect(screen.getByText("ETL Pipeline Intake")).toBeInTheDocument();
+    expect(await screen.findByText("ETL Pipeline Intake")).toBeInTheDocument();
 
     // Assert upload button
     expect(
@@ -76,14 +88,15 @@ describe("Master Data Dashboard (Suite Reorganization)", () => {
   });
 
   it("renders the data table with correct headers under Master Data Registry", async () => {
-    render(<Dashboard />);
+    mockPathname = "/registry";
+    render(
+      <DashboardLayout>
+        <RegistryPage />
+      </DashboardLayout>
+    );
 
     // Wait for session check to complete
-    expect(await screen.findByText("Enterprise Connectivity Hub")).toBeInTheDocument();
-
-    // Switch to Master Data Registry tab
-    const registryLink = screen.getAllByText("Master Data Registry")[0];
-    fireEvent.click(registryLink);
+    expect(await screen.findByText("ETL Pipeline Intake")).toBeInTheDocument();
 
     // Assert headers
     expect(
@@ -101,17 +114,17 @@ describe("Master Data Dashboard (Suite Reorganization)", () => {
   });
 
   it("switches to the validation tab and renders pipeline metrics", async () => {
-    render(<Dashboard />);
+    mockPathname = "/validation";
+    render(
+      <DashboardLayout>
+        <ValidationPage />
+      </DashboardLayout>
+    );
 
     // Wait for session check to complete
-    expect(await screen.findByText("Enterprise Connectivity Hub")).toBeInTheDocument();
-
-    // Click Data Validation menu item
-    const validationMenu = screen.getAllByText("Data Validation")[0];
-    fireEvent.click(validationMenu);
+    expect(await screen.findByTestId("pipelines-title")).toBeInTheDocument();
 
     // Verify ETL Pipeline Monitor header is shown
-    expect(screen.getByTestId("pipelines-title")).toBeInTheDocument();
     expect(screen.getByText("Active Data Flows")).toBeInTheDocument();
     expect(screen.getByText("Live Data Flow Architecture")).toBeInTheDocument();
   });
