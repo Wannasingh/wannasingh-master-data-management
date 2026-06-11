@@ -1,0 +1,6 @@
+projectKey=my-mdm-app
+serverUrl=http://localhost:9900
+serverVersion=26.6.0.123539
+dashboardUrl=http://localhost:9900/dashboard?id=my-mdm-app
+ceTaskId=7b28fbbb-e55f-4905-9d7f-56896b6c9da3
+ceTaskUrl=http://localhost:9900/api/ce/task?id=7b28fbbb-e55f-4905-9d7f-56896b6c9da3

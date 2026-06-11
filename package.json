@@ -3,12 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "fastapi-dev": "bash api/run-backend.sh",
+    "next-dev": "next dev",
+    "dev": "concurrently -k -n \"api,web\" -c \"yellow,blue\" \"npm run fastapi-dev\" \"npm run next-dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "sonar": "sonar-scanner || (echo 'SonarQube scan skipped/failed. Ensure SONAR_TOKEN is set if running locally.' && true)",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:backend": "([ -d venv ] || (python3 -m venv venv && . venv/bin/activate && pip install -r api/requirements.txt)) && . venv/bin/activate && PYTHONPATH=. pytest api/tests/test_main.py",
+    "verify": "npm run format && npm run lint && npm run test && npm run test:backend && npm run sonar",
+    "test:watch": "jest --watch",
+    "prepare": "husky"
   },
   "dependencies": {
     "next": "16.2.9",
@@ -23,13 +30,23 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "eslint-plugin-jest": "^29.15.2",
+    "husky": "^9.1.7",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.8.4",
+    "sonarqube-scanner": "^4.3.6",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   }
 }

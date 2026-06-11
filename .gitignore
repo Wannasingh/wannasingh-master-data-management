@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+mcp.json
+
+# python
+venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+.sonar/
+reports/
+
