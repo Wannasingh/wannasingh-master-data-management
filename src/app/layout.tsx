@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MasterData Pro - MDM Console",
-  description: "Enterprise Orchestrator",
+  title: "Precision MDM - Enterprise Master Data Management Suite",
+  description: "Global Master Index",
 };
 
 export default function RootLayout({

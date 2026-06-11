@@ -15,6 +15,29 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - SUPABASE_SCHEMA=${SUPABASE_SCHEMA}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DD_AGENT_HOST=host.docker.internal
+      - DD_TRACE_AGENT_PORT=8126
+      - DD_SERVICE=wannasingh-mdm-api
+      - DD_ENV=development
+      - DD_VERSION=1.0.0
+      - DD_TRACE_ENABLED=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    labels:
+      com.datadoghq.ad.check_names: '["redisdb"]'
+      com.datadoghq.ad.init_configs: "[{}]"
+      com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": "6379"}]'
 
   web:
     build:
@@ -30,3 +53,6 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - SUPABASE_SCHEMA=${SUPABASE_SCHEMA}
+
+volumes:
+  redis_data:
