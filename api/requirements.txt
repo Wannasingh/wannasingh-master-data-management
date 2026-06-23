@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 pandas
-supabase
 python-dotenv
 pytest
 pytest-asyncio
@@ -13,3 +12,22 @@ pytest-mock
 redis
 ddtrace
 
+# PostgreSQL (replaces Supabase)
+sqlalchemy>=2.0
+asyncpg
+alembic
+psycopg2-binary
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Vault integration
+hvac
+
+# Security
+cryptography>=42.0
+slowapi
+
+# Type stubs
+types-redis
