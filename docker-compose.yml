@@ -1,58 +1,90 @@
 version: "3.8"
 
+# ============================================================
+# Docker Compose — wannasingh-mdm
+# Author      : wannasingh-mdm
+# Date        : 2026-06-23
+# Task/Jira   : MDM-DB-001 / MDM-VAULT-001
+# Purpose     : Local and Apps VM stack.
+#               PostgreSQL replaces Supabase as the primary DB.
+#               Credentials are injected via environment at
+#               runtime (from Vault in production, .env locally).
+# Change Log  :
+#   v1.0  2026-06-23  Initial PostgreSQL migration (wannasingh-mdm)
+# ============================================================
+
 services:
+    # ── FastAPI Backend ───────────────────────────────────────
+  # NOTE: PostgreSQL is already running natively on Apps VM.
+  #       Connect via DATABASE_URL env var (injected from Vault).
+  #       Do NOT add a postgres service here — it would conflict.
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
     ports:
       - "5328:5328"
-    env_file:
-      - .env
-    volumes:
-      - ./api:/app
     environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - SUPABASE_SCHEMA=${SUPABASE_SCHEMA}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      # Database (injected by Vault Agent or local .env)
+      - DATABASE_URL=${DATABASE_URL}
+      # Redis
+      - REDIS_URL=${REDIS_URL}
+      # JWT & Encryption
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - PAYLOAD_ENCRYPTION_KEY=${PAYLOAD_ENCRYPTION_KEY}
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      # Vault (set in production; leave blank for local dev)
+      - VAULT_ADDR=${VAULT_ADDR:-}
+      - VAULT_TOKEN=${VAULT_TOKEN:-}
+      - VAULT_NAMESPACE=${VAULT_NAMESPACE:-}
+      - VAULT_MOUNT_POINT=${VAULT_MOUNT_POINT:-secret}
+      # Datadog APM
       - DD_AGENT_HOST=host.docker.internal
       - DD_TRACE_AGENT_PORT=8126
       - DD_SERVICE=wannasingh-mdm-api
-      - DD_ENV=development
+      - DD_ENV=${DD_ENV:-development}
       - DD_VERSION=1.0.0
-      - DD_TRACE_ENABLED=true
+      - DD_TRACE_ENABLED=${DD_TRACE_ENABLED:-false}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - redis
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
 
+  # ── Redis (Caching) ───────────────────────────────────────
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass}
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     labels:
       com.datadoghq.ad.check_names: '["redisdb"]'
       com.datadoghq.ad.init_configs: "[{}]"
       com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": "6379"}]'
 
+  # ── Next.js Frontend ──────────────────────────────────────
   web:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://api:5328}
+      - NEXT_PUBLIC_ENCRYPTION_KEY=${PAYLOAD_ENCRYPTION_KEY}
     depends_on:
       - api
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - SUPABASE_SCHEMA=${SUPABASE_SCHEMA}
 
 volumes:
   redis_data:
