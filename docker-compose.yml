@@ -40,13 +40,7 @@ services:
       - VAULT_TOKEN=${VAULT_TOKEN:-}
       - VAULT_NAMESPACE=${VAULT_NAMESPACE:-}
       - VAULT_MOUNT_POINT=${VAULT_MOUNT_POINT:-secret}
-      # Datadog APM
-      - DD_AGENT_HOST=host.docker.internal
-      - DD_TRACE_AGENT_PORT=8126
-      - DD_SERVICE=wannasingh-mdm-api
-      - DD_ENV=${DD_ENV:-development}
-      - DD_VERSION=1.0.0
-      - DD_TRACE_ENABLED=${DD_TRACE_ENABLED:-false}
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -67,10 +61,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    labels:
-      com.datadoghq.ad.check_names: '["redisdb"]'
-      com.datadoghq.ad.init_configs: "[{}]"
-      com.datadoghq.ad.instances: '[{"host": "%%host%%", "port": "6379"}]'
+
 
   # ── Next.js Frontend ──────────────────────────────────────
   web:

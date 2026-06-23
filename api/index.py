@@ -19,12 +19,6 @@
 import os
 import logging
 
-# Auto-instrument FastAPI, HTTP client libraries, and Redis for Datadog APM
-try:
-    import ddtrace.auto  # noqa: F401
-except ImportError:
-    pass
-
 import io
 import json
 import redis
@@ -155,7 +149,7 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     # Disable schema endpoints in production
-    docs_url="/docs" if os.getenv("DD_ENV", "development") != "production" else None,
+    docs_url="/docs" if os.getenv("APP_ENV", "development") != "production" else None,
     redoc_url=None,
 )
 

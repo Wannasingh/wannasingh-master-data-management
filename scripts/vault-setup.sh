@@ -48,9 +48,6 @@ ENC_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 vault kv put "${MOUNT}/mdm/encryption" \
     PAYLOAD_ENCRYPTION_KEY="${ENC_KEY}"
 
-echo "  Writing Datadog API key (placeholder)..."
-vault kv put "${MOUNT}/mdm/datadog" \
-    DD_API_KEY="REPLACE_ME_WITH_ACTUAL_DD_KEY"
 
 # ── 3. Create app policy ───────────────────────────────────────
 echo "  Creating Vault policy..."

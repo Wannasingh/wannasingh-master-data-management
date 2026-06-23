@@ -10,7 +10,6 @@ pydantic
 python-multipart
 pytest-mock
 redis
-ddtrace
 
 # PostgreSQL (replaces Supabase)
 sqlalchemy>=2.0
